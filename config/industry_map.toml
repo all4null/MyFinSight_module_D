@@ -1,0 +1,5 @@
+# K3 — 관심산업 → GICS industry
+"반도체" = ["Semiconductors", "Semiconductor Materials & Equipment"]
+"클라우드" = ["Software", "IT Services"]
+"AI" = ["Semiconductors", "Software", "Interactive Media & Services", "IT Services"]
+"인터넷" = ["Interactive Media & Services", "Broadline Retail"]

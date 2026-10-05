@@ -1,0 +1,12 @@
+{
+  "spec_id": "demo-lowvol-ivol",
+  "name": "AI 관련 저변동성 5종목, 변동성 역가중",
+  "version": 1,
+  "universe": {"mode": "dynamic", "tickers": []},
+  "selection": {"rule": "low_volatility_top_n", "params": {"n": 5, "lookback_days": 252}},
+  "weighting": {"rule": "inverse_volatility", "params": {"lookback_days": 252}},
+  "constraints": {"exclude_tickers": [], "max_weight_all": 0.25, "max_weight_per_ticker": {"NVDA": 0.15}},
+  "rebalance": "Q",
+  "period_years": 5,
+  "benchmark": "SPY"
+}

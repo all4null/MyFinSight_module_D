@@ -1,0 +1,19 @@
+{
+  "profile_id": "demo-001",
+  "investment_amount_krw": 30000000,
+  "horizon_months": 36,
+  "risk_type_computed": "위험중립형",
+  "risk_type": "위험중립형",
+  "risk_type_overridden": false,
+  "loss_tolerance_pct": 30,
+  "interest_industries": ["AI", "반도체", "클라우드"],
+  "preferences": ["성장"],
+  "memo": null,
+  "constraints": {
+    "exclude_tickers": [],
+    "max_weight_all": 0.25,
+    "max_weight_per_ticker": {"NVDA": 0.15},
+    "allow_etf": false
+  },
+  "market": "US"
+}

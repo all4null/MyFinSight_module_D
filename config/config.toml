@@ -1,0 +1,27 @@
+[backtest]
+period_years = 5
+rebalance = "Q"
+rebalance_anchor = "first_trading_day"
+benchmark = "SPY"
+allowed_benchmarks = ["SPY", "QQQ"]
+cost_bps = 10.0
+trading_days_per_year = 252
+
+[risk_free]
+provider = "fixed"
+annual_rate = 0.0   # K1
+
+[data]
+db_url = "sqlite:///data/myfinsight.db"
+price_source = "yfinance"
+fx_symbol = "KRW=X"
+coverage_threshold = 0.95
+max_fill_days = 1
+retry_max = 3
+retry_backoff_sec = 1.0
+cache_max_age_days = 1
+
+[universe]
+indices = ["SP500", "NDX"]
+max_size = 60
+industry_map_path = "config/industry_map.toml"
