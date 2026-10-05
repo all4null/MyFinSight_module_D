@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyFinSight 묶음 D 데이터 흐름</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 한 줄 읽기 폭의 기술 해설서. 섹션 = 실행 순서, 표·그림은 가로 스크롤 컨테이너 */
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --fg: #1b2230;
+  --muted: #5a6475;
+  --line: #d9dee6;
+  --accent: #1f5fa8;
+  --accent-soft: #e4edf8;
+  --d: #1f5fa8;      /* 묶음 D */
+  --other: #8a94a6;  /* 묶음 A·B·C */
+  --ok: #2f7d4f;
+  --warn: #a8641f;
+  --bad: #b23a3a;
+  --code-bg: #eef1f5;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161d; --surface: #1a2029; --fg: #e3e8ef; --muted: #9aa5b5; --line: #2c3442;
+    --accent: #7fb0ec; --accent-soft: #1d2a3b; --d: #7fb0ec; --other: #6f7a8c;
+    --ok: #6cc28f; --warn: #e0a560; --bad: #e57d7d; --code-bg: #222a35; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161d; --surface: #1a2029; --fg: #e3e8ef; --muted: #9aa5b5; --line: #2c3442;
+  --accent: #7fb0ec; --accent-soft: #1d2a3b; --d: #7fb0ec; --other: #6f7a8c;
+  --ok: #6cc28f; --warn: #e0a560; --bad: #e57d7d; --code-bg: #222a35; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15.5px; line-height: 1.7; }
+.wrap { max-width: 880px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 80px; display: grid; gap: 48px; }
+header { display: grid; gap: 10px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+h1 { font-size: 30px; line-height: 1.3; margin: 0; text-wrap: balance; }
+h2 { font-size: 21px; margin: 0; text-wrap: balance; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+h3 { font-size: 16.5px; margin: 0; }
+p { margin: 0; max-width: 68ch; }
+section { display: grid; gap: 16px; }
+.lead { color: var(--muted); }
+.tag { font-family: var(--font-mono); font-size: 12px; padding: 2px 8px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); font-weight: 500; white-space: nowrap; }
+.tag.other { background: var(--code-bg); color: var(--muted); }
+code, .mono { font-family: var(--font-mono); font-size: .88em; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 500; letter-spacing: .03em; }
+td.num, th.num { text-align: right; }
+tr.d td:first-child { box-shadow: inset 3px 0 0 var(--d); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px 20px; display: grid; gap: 12px; min-width: 0; }
+.formula { font-family: var(--font-mono); font-size: 14px; background: var(--code-bg); border-radius: 6px; padding: 12px 14px; line-height: 1.9; overflow-x: auto; white-space: pre; }
+.formula .c { color: var(--muted); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; }
+pre.mermaid { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin: 0; overflow-x: auto; text-align: center; }
+ul, ol { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; }
+.say { border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; color: var(--fg); }
+.say b { color: var(--accent); font-weight: 500; }
+svg text { font-family: var(--font-body); }
+nav { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13.5px; }
+nav a { color: var(--accent); text-decoration: none; }
+nav a:hover, nav a:focus-visible { text-decoration: underline; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 480px) { h1 { font-size: 24px; } body { font-size: 15px; } }
+</style>
+<script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs"; mermaid.initialize({ startOnLoad: true });</script>
+</head>
+<body>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">MyFinSight 프로토타입 · 묶음 D (결과·통합)</div>
+  <h1>데이터가 어느 코드에서 어떻게 바뀌어 Report가 되는가</h1>
+  <p class="lead">고정 Profile·Spec 파일에서 시작해 텍스트 Report가 저장될 때까지, 13개 단계에서 오가는 데이터와 그 데이터를 만드는 코드·수식을 정리했습니다. 파란색은 묶음 D가 구현한 부분, 회색은 다른 묶음(A·B·C)이 구현할 부분입니다. 예시 숫자는 저장소 테스트 시나리오(<code>tests/conftest.py</code>, 부록 A 예시 Profile·Spec)의 실제 결과입니다.</p>
+  <nav>
+    <a href="#flow">1. 전체 흐름</a><a href="#table">2. 단계별 입출력</a><a href="#runlog">3. 실행 기록</a>
+    <a href="#evidence">4. 근거 생성</a><a href="#report">5. Report 조립</a><a href="#display">6. 표시 규칙</a>
+    <a href="#consist">7. 일치성 검사</a><a href="#errors">8. 오류·종료 코드</a><a href="#metrics">9. 지표 수식</a><a href="#talk">10. 설명용 요약</a>
+  </nav>
+</header>
+
+<section id="flow">
+  <h2>1. 전체 흐름 <span class="tag">runtime/pipeline.py</span></h2>
+  <p>CLI(<code>python -m myfinsight run</code>)가 <code>Pipeline.run()</code>을 부르면, 파이프라인은 정해진 순서로 각 모듈을 호출하고 결과를 다음 단계에 넘깁니다. 파이프라인 자체는 계산하지 않고 호출 순서와 오류 처리만 맡습니다. 화살표 위 글자가 다음 단계로 넘어가는 데이터(M00-02 스키마)입니다.</p>
+  <div class="legend"><span><span class="sw" style="background:var(--d)"></span>묶음 D 구현</span><span><span class="sw" style="background:var(--other)"></span>묶음 A·B·C (포트로 연결)</span></div>
+<pre class="mermaid">
+flowchart TD
+  CLI["CLI<br/>runtime/cli.py"] --> CFG["설정 로드 · 저장소 열기<br/>M00-01 · M02-04"]
+  CFG -->|"run_id 발급"| P1["① load_profile<br/>M01-01"]
+  P1 -->|"UserProfile"| P2["② validate_spec<br/>Spec 파일 로드 + M04-01"]
+  P2 -->|"StrategySpec"| P3["③ constituents<br/>M02-05"]
+  P3 -->|"IndexConstituent 목록"| P4["④ universe<br/>M03-05"]
+  P4 -->|"UniverseResult"| P5["⑤ fetch_prices<br/>M02-01·02·04"]
+  P5 -->|"PriceFrame + PriceMeta"| P6["⑥ data_quality<br/>M02-03"]
+  P6 -->|"DataQualityReport + 결측 없는 PriceFrame"| P7["⑦ compute_weights<br/>M03-04"]
+  P7 -->|"WeightSet"| P8["⑧ validate_weights<br/>M04-02"]
+  P8 --> P9["⑨ backtest<br/>M05-01 (+M05-03)"]
+  P9 -->|"BacktestResult"| P10["⑩ metrics<br/>M05-02"]
+  P10 -->|"MetricsBundle"| P11["⑪ evidence<br/>M06-01 report/evidence.py"]
+  P11 -->|"EvidenceItem 목록"| P12["⑫ report<br/>M06-02 report/assembler.py"]
+  P12 -->|"Report (ReportData + 텍스트 + 표시값)"| P13["⑬ consistency<br/>M04-03 validation/consistency.py"]
+  P13 -->|"통과"| SAVE["저장: DB + outputs/report_run_id.md"]
+  LOG["M08-01 RunLogger<br/>runtime/runlog.py"] -.->|"모든 단계 상태 기록"| P1
+  classDef d fill:#e4edf8,stroke:#1f5fa8,color:#1b2230;
+  classDef o fill:#eef1f5,stroke:#8a94a6,color:#1b2230;
+  class CLI,P11,P12,P13,SAVE,LOG d;
+  class CFG,P1,P2,P3,P4,P5,P6,P7,P8,P9,P10 o;
+</pre>
+  <p class="lead">②의 Spec 파일 읽기(<code>load_spec_file</code>)는 D가, 그 뒤 정적 검증(M04-01)은 B가 합니다. ⑥과 ⑦ 사이에서 파이프라인은 Universe 중 품질 판정을 통과한 종목만 남겨 넘깁니다: <code>candidates = [t for t in universe.tickers if t in usable_tickers]</code>.</p>
+</section>
+
+<section id="table">
+  <h2>2. 단계별 입력 → 코드 → 출력</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>#</th><th>단계 이름</th><th>호출 코드</th><th>입력</th><th>출력</th><th>담당</th></tr></thead>
+    <tbody>
+      <tr><td>①</td><td class="mono">load_profile</td><td class="mono">ports.load_profile</td><td>profile.json, AppConfig</td><td>UserProfile</td><td>B</td></tr>
+      <tr><td>②</td><td class="mono">validate_spec</td><td class="mono">load_spec_file → ports.validate_spec</td><td>spec.json, UserProfile</td><td>StrategySpec, ValidationResult</td><td>D·B</td></tr>
+      <tr><td>③</td><td class="mono">constituents</td><td class="mono">ports.ensure_constituents</td><td>오늘 날짜, 저장소</td><td>지수별 IndexConstituent, 경고</td><td>A</td></tr>
+      <tr><td>④</td><td class="mono">universe</td><td class="mono">ports.build_universe</td><td>구성종목, Profile, Spec</td><td>UniverseResult</td><td>B</td></tr>
+      <tr><td>⑤</td><td class="mono">fetch_prices</td><td class="mono">ports.fetch_prices</td><td>후보 티커 + Benchmark</td><td>PriceFrame, PriceMeta</td><td>A</td></tr>
+      <tr><td>⑥</td><td class="mono">data_quality</td><td class="mono">ports.assess_quality</td><td>PriceFrame</td><td>DataQualityReport, PriceFrame</td><td>A</td></tr>
+      <tr><td>⑦</td><td class="mono">compute_weights</td><td class="mono">ports.compute_weights</td><td>Spec, 후보, 가격, 기준일</td><td>WeightSet</td><td>B</td></tr>
+      <tr><td>⑧</td><td class="mono">validate_weights</td><td class="mono">ports.validate_weights</td><td>WeightSet, Spec</td><td>ValidationResult</td><td>B</td></tr>
+      <tr><td>⑨</td><td class="mono">backtest</td><td class="mono">ports.run_backtest</td><td>Spec, 후보, 가격, Profile</td><td>BacktestResult</td><td>C</td></tr>
+      <tr><td>⑩</td><td class="mono">metrics</td><td class="mono">ports.compute_metrics</td><td>BacktestResult</td><td>MetricsBundle</td><td>C</td></tr>
+      <tr class="d"><td>⑪</td><td class="mono">evidence</td><td class="mono">build_evidence</td><td>Universe, WeightSet, 품질, 지표, Profile, PriceMeta, Spec</td><td>EvidenceItem 목록</td><td>D</td></tr>
+      <tr class="d"><td>⑫</td><td class="mono">report</td><td class="mono">assemble_report</td><td>위 결과 전부 + 단계 기록</td><td>Report</td><td>D</td></tr>
+      <tr class="d"><td>⑬</td><td class="mono">consistency</td><td class="mono">check_consistency</td><td>Report, Spec, WeightSet, Backtest, 지표</td><td>ValidationResult</td><td>D</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="lead">①~⑩은 <code>runtime/ports.py</code>의 <code>PipelinePorts</code> 규약으로 호출합니다. 실제 모듈 연결은 <code>runtime/wiring.py</code>, 테스트에서는 가짜 구현(<code>FakePorts</code>)을 넣습니다.</p>
+</section>
+
+<section id="runlog">
+  <h2>3. 실행 기록 <span class="tag">M08-01 runtime/runlog.py</span></h2>
+  <p>각 단계는 <code>with run_log.step("이름") as h:</code>로 감쌉니다. 들어갈 때 STARTED를 저장하고, 끝날 때 결과에 따라 상태를 덮어씁니다. 같은 <code>(run_id, step)</code> 키에 저장하므로 단계마다 최종 상태 한 줄이 남습니다.</p>
+<pre class="mermaid">
+stateDiagram-v2
+  [*] --> STARTED: step() 진입
+  STARTED --> SUCCESS: 정상 종료
+  STARTED --> PARTIAL: 정상 종료 + h.mark_partial(사유)
+  STARTED --> FAILED: 예외 발생 (code·message 기록 후 예외 다시 던짐)
+  [*] --> SKIPPED: run_log.skip() 고정 Universe일 때 constituents
+</pre>
+  <div class="grid2">
+    <div class="panel">
+      <h3>기록되는 값 (StepRecord)</h3>
+      <ul>
+        <li><code>started_at</code>, <code>ended_at</code>: UTC 시각</li>
+        <li><code>summary</code>: <code>h.set_summary()</code> 문장</li>
+        <li><code>sources</code>: <code>h.add_source()</code> 출처 (중복 제거)</li>
+        <li><code>error_code</code>: <code>MyFinSightError.code</code>, 그 외 예외는 <code>UNEXPECTED_ERROR</code></li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>Report 12번 섹션 한 줄</h3>
+      <div class="formula">라벨: 상태 (요약) [출처: …]
+<span class="c">예)</span> 데이터 품질 판정: 부분 성공 (20/21; 1개 제외)
+<span class="c">예)</span> Backtest: 실패 (BACKTEST_NO_PRICE: 가격 없음)</div>
+      <p class="lead">저장소 저장이 실패해도 경고 로그만 남기고 분석은 계속합니다.</p>
+    </div>
+  </div>
+</section>
+
+<section id="evidence">
+  <h2>4. 근거 생성 <span class="tag">M06-01 report/evidence.py</span></h2>
+  <p><code>build_evidence()</code>는 계산하지 않습니다. 다른 모듈이 만든 값을 정해진 문장 틀에 넣고, 문장에 쓴 원본 숫자를 <code>values</code>에 그대로 저장합니다. 모든 항목에 출처(<code>source</code>)와 기준일(<code>as_of</code>)이 붙습니다.</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>kind</th><th>가져오는 데이터</th><th>문장 틀 → 실제 예</th><th>values 참조 키</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">universe</td><td>UniverseResult.snapshot_dates, Profile.interest_industries</td><td>S&amp;P 500·Nasdaq-100 구성종목(2026-09-21 기준) 중 관심산업 AI, 반도체, 클라우드에 해당하는 20개 종목을 후보로 사용했습니다.</td><td class="mono">k, snapshot_date</td></tr>
+      <tr><td class="mono">selection</td><td>WeightSet.signals (지표값·순위·후보 수)</td><td>MSFT: 최근 252거래일 연환산 변동성 21.00%, 후보 20개 중 1위 → 저변동성 상위 5개에 포함</td><td class="mono">signal.ann_volatility<br>rank.ann_volatility</td></tr>
+      <tr><td class="mono">weight</td><td>WeightSet.pre_cap_weights</td><td>NVDA: 변동성 역가중 방식으로 30.0%</td><td class="mono">weight.pre_cap</td></tr>
+      <tr><td class="mono">cap</td><td>pre_cap → weights, Spec 상한</td><td>NVDA: 상한 15.0% 적용으로 30.0% → 15.0%<br>MSFT: 다른 종목의 상한 초과분 재분배로 20.0% → 25.0%</td><td class="mono">weight.pre_cap<br>weight.final</td></tr>
+      <tr><td class="mono">metric</td><td>MetricsBundle, Profile.loss_tolerance_pct</td><td>Backtest 기간 최대낙폭 -22.45%(…)는 투자성향의 손실 감내 수준 -30.00% 이내입니다.</td><td class="mono">metrics.strategy.mdd</td></tr>
+      <tr><td class="mono">limitation</td><td>DataQualityReport.excluded</td><td>C99: 데이터 부족으로 제외 (커버리지 0.9000 &lt; 0.95)</td><td class="mono">(대조 없음)</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="panel">
+    <h3>cap 문장이 붙는 조건과 상한값</h3>
+    <div class="formula">cap 항목 생성:  |w<sub>pre</sub> − w<sub>final</sub>| &gt; 1e-9
+상한        c<sub>i</sub> = min( max_weight_all , max_weight_per_ticker[i] )
+문장 선택   w<sub>pre</sub> &gt; c<sub>i</sub>  →  "상한 c 적용으로 …"   (줄어든 종목)
+            그 외           →  "다른 종목의 상한 초과분 재분배로 …"   (늘어난 종목)
+MDD 판정    −MDD × 100 ≤ loss_tolerance_pct  →  "이내입니다" / 아니면 "를 초과합니다"</div>
+  </div>
+  <div class="panel">
+    <h3>예시: 상한 적용 전후 비중 (재분배 계산은 B의 M03-03, D는 결과를 문장으로 설명)</h3>
+    <div class="legend"><span><span class="sw" style="background:var(--other)"></span>상한 전 (pre_cap)</span><span><span class="sw" style="background:var(--d)"></span>상한 후 (final)</span><span><span class="sw" style="background:var(--bad)"></span>상한선</span></div>
+    <div class="scroll">
+    <svg viewBox="0 0 640 270" width="100%" style="max-width:640px;min-width:480px" role="img" aria-label="종목별 상한 전후 비중 막대그래프">
+      <!-- y축: 0~0.30, 0.30 = 200px, 바닥 y=230 -->
+      <g fill="var(--muted)" font-size="11" text-anchor="end">
+        <text x="44" y="234">0%</text><text x="44" y="167.3">10%</text><text x="44" y="100.7">20%</text><text x="44" y="34">30%</text>
+      </g>
+      <g stroke="var(--line)" stroke-width="1">
+        <line x1="50" y1="230" x2="630" y2="230"/><line x1="50" y1="163.3" x2="630" y2="163.3"/><line x1="50" y1="96.7" x2="630" y2="96.7"/><line x1="50" y1="30" x2="630" y2="30"/>
+      </g>
+      <!-- 전체 상한 25% : y = 230 - 0.25*666.67 = 63.3 -->
+      <line x1="50" y1="63.3" x2="630" y2="63.3" stroke="var(--bad)" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <text x="630" y="57" font-size="11" fill="var(--bad)" text-anchor="end">전체 상한 25%</text>
+      <!-- 종목: NVDA .30/.15, AAPL .25/.25, MSFT .20/.25, AVGO .15/.21, ORCL .10/.14 ; 그룹 폭 116, 시작 x=66 -->
+      <g>
+        <rect x="70" y="30" width="40" height="200" fill="var(--other)"/>
+        <rect x="112" y="130" width="40" height="100" fill="var(--d)"/>
+        <line x1="66" y1="130" x2="158" y2="130" stroke="var(--bad)" stroke-width="1.5"/>
+        <text x="111" y="250" font-size="12" fill="var(--fg)" text-anchor="middle">NVDA</text>
+        <text x="111" y="264" font-size="10.5" fill="var(--bad)" text-anchor="middle">종목 상한 15%</text>
+        <text x="90" y="24" font-size="11" fill="var(--muted)" text-anchor="middle">30.0</text>
+        <text x="132" y="124" font-size="11" fill="var(--fg)" text-anchor="middle">15.0</text>
+
+        <rect x="186" y="63.3" width="40" height="166.7" fill="var(--other)"/>
+        <rect x="228" y="63.3" width="40" height="166.7" fill="var(--d)"/>
+        <text x="227" y="250" font-size="12" fill="var(--fg)" text-anchor="middle">AAPL</text>
+        <text x="206" y="57" font-size="11" fill="var(--muted)" text-anchor="middle">25.0</text>
+        <text x="248" y="80" font-size="11" fill="var(--surface)" text-anchor="middle">25.0</text>
+
+        <rect x="302" y="96.7" width="40" height="133.3" fill="var(--other)"/>
+        <rect x="344" y="63.3" width="40" height="166.7" fill="var(--d)"/>
+        <text x="343" y="250" font-size="12" fill="var(--fg)" text-anchor="middle">MSFT</text>
+        <text x="322" y="90.7" font-size="11" fill="var(--muted)" text-anchor="middle">20.0</text>
+        <text x="364" y="80" font-size="11" fill="var(--surface)" text-anchor="middle">25.0</text>
+
+        <rect x="418" y="130" width="40" height="100" fill="var(--other)"/>
+        <rect x="460" y="90" width="40" height="140" fill="var(--d)"/>
+        <text x="459" y="250" font-size="12" fill="var(--fg)" text-anchor="middle">AVGO</text>
+        <text x="438" y="124" font-size="11" fill="var(--muted)" text-anchor="middle">15.0</text>
+        <text x="480" y="84" font-size="11" fill="var(--fg)" text-anchor="middle">21.0</text>
+
+        <rect x="534" y="163.3" width="40" height="66.7" fill="var(--other)"/>
+        <rect x="576" y="136.7" width="40" height="93.3" fill="var(--d)"/>
+        <text x="575" y="250" font-size="12" fill="var(--fg)" text-anchor="middle">ORCL</text>
+        <text x="554" y="157.3" font-size="11" fill="var(--muted)" text-anchor="middle">10.0</text>
+        <text x="596" y="130.7" font-size="11" fill="var(--fg)" text-anchor="middle">14.0</text>
+      </g>
+    </svg>
+    </div>
+    <p class="lead">NVDA는 종목 상한 15%로 잘리고, 남는 15%p는 상한에 걸리지 않은 종목에 기존 비중 비례로 나뉩니다. 그 과정에서 AAPL·MSFT가 전체 상한 25%에 닿아 고정되고, 나머지 35%가 AVGO(15→21)·ORCL(10→14)에 0.15 : 0.10 비율로 배분됩니다. 합은 100%로 유지됩니다.</p>
+  </div>
+</section>
+
+<section id="report">
+  <h2>5. Report 조립 <span class="tag">M06-02 report/assembler.py</span></h2>
+  <p><code>assemble_report()</code>는 세 단계로 동작합니다. 새 값을 계산하지 않고, 허용된 계산은 금액 곱셈 하나뿐입니다.</p>
+<pre class="mermaid">
+flowchart LR
+  IN["WeightSet · BacktestResult<br/>MetricsBundle · Evidence<br/>Universe · 품질 · 단계 기록"] --> A["build_report_data()<br/>배분표 · 한계 목록"]
+  A -->|"ReportData"| B["render_markdown()<br/>10개 섹션 렌더링"]
+  B -->|"text_markdown"| R["Report"]
+  B -->|"display_values<br/>경로 → 표시 문자열 (48개)"| R
+  classDef d fill:#e4edf8,stroke:#1f5fa8,color:#1b2230;
+  class A,B,R d;
+</pre>
+  <div class="panel">
+    <h3>배분표 금액 공식</h3>
+    <div class="formula">초기자본(USD)   C = investment_amount_krw ÷ fx            <span class="c">← M05-01이 계산해 CalcConditions에 담음</span>
+종목 달러 금액  amount_usd<sub>i</sub> = w<sub>i</sub> × C                       <span class="c">← D가 계산</span>
+종목 원화 금액  amount_krw<sub>i</sub> = ROUND_HALF_UP( amount_usd<sub>i</sub> × fx )   <span class="c">← D가 계산 (원 단위 정수)</span>
+정렬            비중 내림차순, 같으면 티커 오름차순 · 비중 0인 종목은 제외</div>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>종목</th><th class="num">w</th><th class="num">w × C (USD)</th><th class="num">× fx 1,380.50</th><th class="num">원화(반올림)</th></tr></thead>
+      <tbody>
+        <tr><td>AAPL</td><td class="num">0.25</td><td class="num">5,432.8142</td><td class="num">7,500,000.0</td><td class="num">7,500,000원</td></tr>
+        <tr><td>MSFT</td><td class="num">0.25</td><td class="num">5,432.8142</td><td class="num">7,500,000.0</td><td class="num">7,500,000원</td></tr>
+        <tr><td>AVGO</td><td class="num">0.21</td><td class="num">4,563.5639</td><td class="num">6,300,000.0</td><td class="num">6,300,000원</td></tr>
+        <tr><td>NVDA</td><td class="num">0.15</td><td class="num">3,259.6885</td><td class="num">4,500,000.0</td><td class="num">4,500,000원</td></tr>
+        <tr><td>ORCL</td><td class="num">0.14</td><td class="num">3,042.3760</td><td class="num">4,200,000.0</td><td class="num">4,200,000원</td></tr>
+        <tr><td><b>합계</b></td><td class="num">1.00</td><td class="num">21,731.2568</td><td class="num"></td><td class="num"><b>30,000,000원</b></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="lead">C = 30,000,000 ÷ 1,380.50 = 21,731.2568 USD. 원화 합계와 투자금의 차이는 종목별 반올림 때문에 최대 "종목 수 × 1원"까지 날 수 있고, 테스트가 이 범위를 확인합니다.</p>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>한계 목록 (<code>build_limitations</code>)</h3>
+      <ul>
+        <li><b>항상</b>: 과거 성과 ≠ 미래 수익 / 생존·선견 편향</li>
+        <li><b>제외 종목이 있으면</b>: "데이터 부족으로 제외된 종목: …"</li>
+        <li><b>동적 Universe면</b>: 수시 변경 미반영</li>
+        <li><b>스냅샷이 오래되면</b>: 가장 오래된 스냅샷 &lt; 직전 정기 변경일</li>
+        <li><b>파이프라인 경고</b>: 구성종목 갱신 실패 등</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>직전 정기 변경일</h3>
+      <div class="formula">3·6·9·12월 셋째 금요일 중
+오늘 이전(포함) 가장 최근 날짜
+<span class="c">2026-10-05 → 2026-09-18</span>
+<span class="c">2026-09-17 → 2026-06-19</span></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>렌더링되는 섹션 (부록 B 번호)</h3>
+    <p>1 요약 → 2 투자조건 → 3 Portfolio 구성 → 4 전략 규칙 → 5 구성 근거 → 7 Backtest 성과 → 8 Risk → 10 계산 조건 → 11 한계·주의 → 12 분석 과정 요약. 6(기업·시장 정보)은 프로토타입 범위 밖이고, 9(결과 해석)는 요약의 템플릿 한 줄로 대신합니다. 숫자를 쓸 때는 반드시 <code>self.v("경로")</code>를 거쳐 표시값 목록에 기록합니다.</p>
+  </div>
+</section>
+
+<section id="display">
+  <h2>6. 표시 규칙 <span class="tag">부록 D report/display.py</span></h2>
+  <p>Report 숫자는 모두 경로 → 포맷터 규칙표(<code>_PATH_RULES</code>)를 거칩니다. 반올림은 사사오입(ROUND_HALF_UP)이고, 부동소수 오차를 피하려고 <code>Decimal(repr(x))</code>로 바꾼 뒤 반올림합니다. Report 조립기와 일치성 검사기가 같은 규칙을 씁니다.</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>값 종류</th><th>경로 예</th><th>규칙</th><th>원본 → 표시</th></tr></thead>
+    <tbody>
+      <tr><td>수익률·MDD</td><td class="mono">metrics.strategy.cagr</td><td>% 소수 둘째 자리, 부호</td><td class="mono">0.1263 → +12.63%</td></tr>
+      <tr><td>변동성</td><td class="mono">metrics.strategy.ann_volatility</td><td>% 소수 둘째 자리</td><td class="mono">0.1987 → 19.87%</td></tr>
+      <tr><td>비중</td><td class="mono">allocation.NVDA.weight</td><td>% 소수 첫째 자리</td><td class="mono">0.15 → 15.0%</td></tr>
+      <tr><td>원화</td><td class="mono">allocation.NVDA.amount_krw</td><td>정수, 천 단위 쉼표</td><td class="mono">4500000 → 4,500,000원</td></tr>
+      <tr><td>달러</td><td class="mono">allocation.NVDA.amount_usd</td><td>소수 둘째 자리</td><td class="mono">3259.6885 → $3,259.69</td></tr>
+      <tr><td>Sharpe</td><td class="mono">metrics.strategy.sharpe</td><td>소수 둘째 자리, 없으면 표시 불가</td><td class="mono">0.6421 → 0.64 · None → METRIC_UNDEFINED</td></tr>
+      <tr><td>날짜</td><td class="mono">conditions.start</td><td>YYYY-MM-DD</td><td class="mono">2021-10-01</td></tr>
+      <tr><td>반올림 경계</td><td class="mono">—</td><td>사사오입</td><td class="mono">$2.675 → $2.68 · 2.5 → 3</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="consist">
+  <h2>7. 일치성 검사 <span class="tag">M04-03 validation/consistency.py</span></h2>
+  <p>Report에 적힌 값이 실제 실행에 쓰인 값과 같은지 6가지로 대조합니다. 하나라도 어긋나면 Report를 저장·출력하지 않고 실패로 끝납니다. 검사만 하고 값을 고치지 않습니다.</p>
+<pre class="mermaid">
+flowchart LR
+  subgraph RUN["실행에 쓰인 원본"]
+    S["StrategySpec"]
+    W["WeightSet"]
+    BT["BacktestResult"]
+    M["MetricsBundle"]
+  end
+  subgraph REP["Report"]
+    RD["ReportData"]
+    TX["text_markdown"]
+    DV["display_values"]
+    EV["evidence"]
+  end
+  S -->|"CONSIST_SPEC 해시"| RD
+  W -->|"CONSIST_WEIGHTS"| RD
+  BT -->|"CONSIST_AMOUNT"| RD
+  M -->|"CONSIST_METRICS"| RD
+  RD -->|"CONSIST_TEXT 규칙대로 다시 포맷"| DV
+  DV -->|"문자열이 본문에 있나"| TX
+  W -->|"CONSIST_EVIDENCE"| EV
+  M -->|"CONSIST_EVIDENCE"| EV
+</pre>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>코드</th><th>비교식</th><th class="num">허용 오차</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">CONSIST_SPEC</td><td>spec.spec_hash() = Report.spec_hash = Report.spec 해시 = WeightSet.spec_hash = Backtest.spec_hash<br><span class="lead">spec_hash = SHA-256(키 정렬 JSON)</span></td><td class="num">완전 일치</td></tr>
+      <tr><td class="mono">CONSIST_WEIGHTS</td><td>배분표 종목 집합 = {t : w<sub>t</sub> &gt; 0}, |w<sub>Report</sub> − w<sub>WeightSet</sub>|, 기준일 일치</td><td class="num">1e-6</td></tr>
+      <tr><td class="mono">CONSIST_AMOUNT</td><td>|amount_usd − w × C| / |amount_krw − ROUND_HALF_UP(w × C × fx)|, 계산 조건 동일</td><td class="num">1e-6 / ±1원</td></tr>
+      <tr><td class="mono">CONSIST_METRICS</td><td>지표 필드별 |Report − MetricsBundle|, 날짜·None은 완전 일치</td><td class="num">1e-9</td></tr>
+      <tr><td class="mono">CONSIST_TEXT</td><td>① 필수 경로(종목별 비중·달러·원화 3개 + 지표 12개, 5종목이면 27개)가 표시값 목록에 있음 ② 표시값 = format(원본) ③ 표시값이 본문에 있음 ④ 배분표 행에 그 종목 값 3개 ⑤ 투자 권유 표현 없음</td><td class="num">문자열 일치</td></tr>
+      <tr><td class="mono">CONSIST_EVIDENCE</td><td>출처 비어 있지 않음, 참조 키 값 = 원본(signals·weights·metrics), 배분 종목마다 selection·weight 근거 존재</td><td class="num">1e-9</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="lead">테스트(<code>tests/test_consistency.py</code>)는 각 항목을 일부러 바꾼 Report를 넣어 해당 코드가 잡히는지 확인합니다. 예: NVDA 비중 0.15 → 0.16, 본문 "15.0%" → "25.0%", 근거의 변동성 0.21 → 0.5.</p>
+</section>
+
+<section id="errors">
+  <h2>8. 오류 처리와 종료 코드 <span class="tag">M08-02 runtime/pipeline.py</span></h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>상황</th><th>발생 위치 (예외·코드)</th><th>처리</th><th class="num">종료 코드</th></tr></thead>
+    <tbody>
+      <tr><td>설정·Profile·Spec 파일 오류</td><td>ConfigError, InputError (예: PROFILE_INVALID, INPUT_SPEC_INVALID)</td><td style="color:var(--bad)">중단</td><td class="num">2</td></tr>
+      <tr><td>Spec 정적 검증 실패</td><td>ValidationResult(ok=False) → SpecValidationError(첫 이슈 코드)</td><td style="color:var(--bad)">중단</td><td class="num">1</td></tr>
+      <tr><td>Universe 0개 · 필수 데이터 실패</td><td>StrategyError(UNIVERSE_EMPTY), DataQualityError</td><td style="color:var(--bad)">중단</td><td class="num">1</td></tr>
+      <tr><td>비중 검증 실패</td><td>ValidationResult(ok=False) → WeightValidationError</td><td style="color:var(--bad)">중단</td><td class="num">1</td></tr>
+      <tr><td>Backtest 오류 · 일치성 실패</td><td>BacktestError, ConsistencyError</td><td style="color:var(--bad)">중단, Report 미저장</td><td class="num">1</td></tr>
+      <tr><td>예상 못 한 예외</td><td>UNEXPECTED_ERROR로 감쌈</td><td style="color:var(--bad)">중단</td><td class="num">1</td></tr>
+      <tr><td>일부 종목 데이터 제외</td><td>DataQualityReport.excluded</td><td style="color:var(--warn)">계속, PARTIAL + 한계 기록</td><td class="num">0</td></tr>
+      <tr><td>구성종목 갱신 실패 (기존 스냅샷 있음)</td><td>ensure_constituents 경고 목록</td><td style="color:var(--warn)">계속, PARTIAL + 한계 기록</td><td class="num">0</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="panel">
+    <h3>run_id</h3>
+    <div class="formula">run_id = YYYYMMDD-HHMMSS-앞6자리( SHA-256( 시작시각 ISO ‖ profile 파일 바이트 ‖ spec 파일 바이트 ) )
+<span class="c">예) 20261005-010203-xxxxxx · 같은 시각·같은 입력이면 같은 run_id (난수 없음, C-03)</span></div>
+  </div>
+</section>
+
+<section id="metrics">
+  <h2>9. Report 숫자의 원래 수식 <span class="tag other">묶음 B·C 참고</span></h2>
+  <p>D는 아래 값을 계산하지 않고 받아서 표시·대조만 합니다. 발표 때 숫자가 어디서 왔는지 물으면 이 수식을 근거로 설명할 수 있습니다 (명세 M03-01·02, M05-01·02).</p>
+  <div class="grid2">
+    <div class="panel">
+      <h3>선정·비중 (B)</h3>
+      <div class="formula">일간수익률   r<sub>t</sub> = P<sub>t</sub> / P<sub>t−1</sub> − 1
+연환산 변동성 σ = std(r, ddof=1) × √252
+저변동성     σ 오름차순 상위 n
+모멘텀       P(t−skip) / P(t−lookback) − 1, 내림차순
+역변동성 비중 w<sub>i</sub> = (1/σ<sub>i</sub>) / Σ(1/σ<sub>j</sub>)
+동일 비중     w<sub>i</sub> = 1/n</div>
+    </div>
+    <div class="panel">
+      <h3>Backtest·지표 (C)</h3>
+      <div class="formula">회전율   Σ|w<sub>target</sub> − w<sub>drift</sub>|
+비용     회전율 × cost_bps / 10,000 × 평가액
+누적수익률 V<sub>T</sub> / V<sub>0</sub> − 1
+CAGR     (V<sub>T</sub>/V<sub>0</sub>)<sup>1/Y</sup> − 1,  Y = 일수 / 365.25
+Sharpe   (mean(r) − r<sub>f,일</sub>) / std(r) × √252
+MDD      min<sub>t</sub>( V<sub>t</sub> / max<sub>s≤t</sub> V<sub>s</sub> − 1 )
+초과     전략 − Benchmark</div>
+    </div>
+  </div>
+</section>
+
+<section id="talk">
+  <h2>10. 설명할 때 쓸 요약</h2>
+  <div class="panel">
+    <p class="say"><b>파이프라인은</b> 13단계를 순서대로 부르고 단계마다 상태를 기록합니다. 계산은 하지 않고, 실패하면 그 단계에서 멈추며 종료 코드로 원인을 알립니다.</p>
+    <p class="say"><b>근거 생성기는</b> 다른 모듈이 계산한 값을 정해진 문장 틀에 넣습니다. 문장에 들어간 숫자의 원본을 함께 저장하므로 나중에 대조할 수 있습니다.</p>
+    <p class="say"><b>Report 조립기는</b> 비중 × 초기자본으로 금액을 만들고 10개 섹션을 씁니다. 화면에 쓴 숫자마다 "어떤 값을 어떤 규칙으로 표시했는지"를 함께 남깁니다.</p>
+    <p class="say"><b>일치성 검사기는</b> 그 기록을 실제 실행 값과 6가지로 맞춰 봅니다. 하나라도 틀리면 Report를 내보내지 않습니다. 그래서 사용자가 보는 숫자는 실행에 쓰인 숫자와 항상 같습니다.</p>
+  </div>
+</section>
+
+</div>
+</body>
+</html>

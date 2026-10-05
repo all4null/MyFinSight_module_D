@@ -20,6 +20,17 @@ LLM 없이 고정 Profile·고정 Spec → Universe 필터 → 가격 수집 →
 계약으로 연결합니다. 실제 연결은 `runtime/wiring.py` (`DefaultPorts`), 합의할 함수 이름·인자는
 [docs/INTEGRATION.md](docs/INTEGRATION.md) 에 정리했습니다.
 
+단계별 데이터 흐름·수식·검사 항목을 그림으로 정리한 설명서: [docs/dataflow.html](docs/dataflow.html)
+(브라우저로 열기).
+
+### ports 란
+
+`PipelinePorts` 는 파이프라인이 다른 묶음 모듈을 부를 때 쓰는 연결 규격입니다. 메서드 이름과
+입력·출력 타입만 정해 두고, 파이프라인은 이 규격의 메서드만 호출합니다. 규격을 만족하는 객체를
+바꿔 끼우는 방식이라 실제 모듈(`wiring.DefaultPorts`) 대신 테스트용 가짜(`tests/conftest.py`
+`FakePorts`)를 넣어 A·B·C 없이도 13단계 전체를 테스트할 수 있습니다. 다른 묶음 모듈이 완성되면
+파이프라인은 그대로 두고 `wiring.py` 의 연결 줄만 맞추면 됩니다.
+
 ## 실행
 
 ```bash
@@ -76,3 +87,10 @@ M00-02 「스키마 변경 시 버전 메모」 규칙에 따라 명세와 다�
 5. 표시값 경로(`display_values` 키) 규약 — `allocation.<TICKER>.weight` 처럼 ReportData 안의 값을
    가리키며, 경로별 표시 규칙은 `report/display.py` 한 곳에 둡니다 (M06-02·M04-03 공용).
 6. Enum은 명세대로 `(str, Enum)` 을 유지 (ruff UP042 예외 처리).
+7. 고정 Universe Spec이면 `constituents` 단계를 실행하지 않고 SKIPPED로 기록 (명세는 13단계 기록).
+8. 근거 항목 추가 — 상한 초과분 재분배로 비중이 늘어난 종목에도 `cap` 문장, 누적수익률을
+   Benchmark와 비교하는 `metric` 문장 1건.
+9. 일치성 검사 범위 확장 — Spec 해시를 WeightSet과도 대조, 배분표 행 단위 대조, 본문의 투자 권유
+   표현 검출(`CONSIST_TEXT`).
+10. CLI 추가 — `steps <run_id>` 명령(R9 분석 건별 단계 확인), `--output-dir` 옵션.
+11. `docs/INTEGRATION.md` 의 다른 묶음 함수 이름·인자는 제안안 (명세에 이름이 없음, 합의 필요).
